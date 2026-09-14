@@ -16,7 +16,7 @@ export const openSubAccountSpec: RecordingSpec = {
     'Looks up a member by ID and opens a new sub-account (savings or checking) with a given ' +
     'initial deposit, confirms it, and reports back the confirmation message. Precondition: the ' +
     'caller already has an authenticated session against the target app.',
-  target: { baseUrl: 'http://localhost:4000' },
+  target: { baseUrl: 'http://localhost:4000', entryPath: '/search' },
   stepIndices: [3, 4, 5, 6, 7, 8, 9, 10, 11],
   inputs: [
     {
@@ -48,4 +48,21 @@ export const openSubAccountSpec: RecordingSpec = {
     },
   ],
   checkpoint: { type: 'text_present', text: 'New sub-account' },
+  businessOutcomes: [
+    {
+      id: 'member_not_found',
+      description: 'No member exists with the given ID.',
+      trigger: { type: 'text_present', text: 'No member found for ID' },
+    },
+    {
+      id: 'permission_denied',
+      description: 'The caller does not have permission to open a sub-account for this member.',
+      trigger: { type: 'text_present', text: 'do not have permission' },
+    },
+    {
+      id: 'validation_error',
+      description: 'The initial deposit failed validation (non-numeric or below the minimum).',
+      trigger: { type: 'text_present', text: 'Initial deposit must be a number' },
+    },
+  ],
 };

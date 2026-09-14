@@ -1,4 +1,4 @@
-import type { Checkpoint, JsonSchemaLike } from './schema.js';
+import type { BusinessOutcome, Checkpoint, JsonSchemaLike } from './schema.js';
 
 /**
  * What a human reviewer declares, after reading a discovery transcript, to turn it into a
@@ -18,11 +18,13 @@ export interface RecordingSpec {
   version: number;
   name: string;
   description: string;
-  target: { baseUrl: string };
+  target: { baseUrl: string; entryPath: string };
   /** Discovery-transcript step indices to include, in order. Steps not listed (e.g. login) are
    *  treated as a precondition of invoking the capability, not part of it. */
   stepIndices: number[];
   inputs: RecordingSpecField[];
   outputs: RecordingSpecField[];
   checkpoint: Checkpoint;
+  /** Known non-happy-path results the app can return partway through this flow. */
+  businessOutcomes: BusinessOutcome[];
 }

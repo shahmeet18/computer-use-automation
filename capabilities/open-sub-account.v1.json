@@ -4,7 +4,8 @@
   "name": "Open Sub-Account",
   "description": "Looks up a member by ID and opens a new sub-account (savings or checking) with a given initial deposit, confirms it, and reports back the confirmation message. Precondition: the caller already has an authenticated session against the target app.",
   "target": {
-    "baseUrl": "http://localhost:4000"
+    "baseUrl": "http://localhost:4000",
+    "entryPath": "/search"
   },
   "inputSchema": {
     "memberId": {
@@ -224,10 +225,36 @@
     "type": "text_present",
     "text": "New sub-account"
   },
+  "businessOutcomes": [
+    {
+      "id": "member_not_found",
+      "description": "No member exists with the given ID.",
+      "trigger": {
+        "type": "text_present",
+        "text": "No member found for ID"
+      }
+    },
+    {
+      "id": "permission_denied",
+      "description": "The caller does not have permission to open a sub-account for this member.",
+      "trigger": {
+        "type": "text_present",
+        "text": "do not have permission"
+      }
+    },
+    {
+      "id": "validation_error",
+      "description": "The initial deposit failed validation (non-numeric or below the minimum).",
+      "trigger": {
+        "type": "text_present",
+        "text": "Initial deposit must be a number"
+      }
+    }
+  ],
   "provenance": {
     "discoveryRunFile": "evidence/discovery-open-sub-account.json",
     "model": "anthropic/claude-sonnet-4.5",
     "sourceGoal": "Log in, look up member 12345, open a new CHECKING sub-account for them with a 250 dollar initial deposit, confirm it, and read back the confirmation message so it can be reported to the caller.",
-    "recordedAt": "2026-09-14T22:01:19.871Z"
+    "recordedAt": "2026-09-14T22:05:20.884Z"
   }
 }

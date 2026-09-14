@@ -52,16 +52,29 @@ export interface Checkpoint {
   text: string;
 }
 
+/**
+ * A known, legitimate non-happy-path result the app can return -- "no such member" is an answer,
+ * not a crash. Declared by whoever recorded the capability (they've seen the app's error states),
+ * checked by replay after every step so it's reported as a business outcome rather than surfacing
+ * as a confusing hard failure further down the flow.
+ */
+export interface BusinessOutcome {
+  id: string;
+  description: string;
+  trigger: { type: 'text_present'; text: string };
+}
+
 export interface Capability {
   id: string;
   version: number;
   name: string;
   description: string;
-  target: { baseUrl: string };
+  target: { baseUrl: string; entryPath: string };
   inputSchema: Record<string, JsonSchemaLike>;
   outputSchema: Record<string, JsonSchemaLike>;
   steps: CapabilityStep[];
   checkpoint: Checkpoint;
+  businessOutcomes: BusinessOutcome[];
   provenance: {
     discoveryRunFile: string;
     model: string;

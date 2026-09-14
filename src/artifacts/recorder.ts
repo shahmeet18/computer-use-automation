@@ -30,6 +30,7 @@ export function recordArtifact(
     outputSchema: toSchema(spec.outputs),
     steps,
     checkpoint: spec.checkpoint,
+    businessOutcomes: spec.businessOutcomes,
     provenance: {
       discoveryRunFile,
       model: transcript.model,
