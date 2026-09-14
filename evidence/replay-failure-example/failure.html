@@ -1,0 +1,31 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Open Sub-Account - Member Services</title></head>
+<body>
+<table width="100%" cellpadding="4" cellspacing="0" border="0">
+  <tbody><tr><td><h2>Member Services — Back Office</h2></td></tr>
+</tbody></table>
+<hr>
+
+<p>Opening a new sub-account for <b>Alice Nguyen</b> (12345)</p>
+
+<form method="post" action="/members/12345/sub-account/new">
+  <table cellpadding="4" cellspacing="0" border="0">
+    <tbody><tr>
+      <td><label for="accountType">Account Type</label></td>
+      <td>
+        <select id="accountType" name="accountType">
+          <option value="savings">Savings</option>
+          <option value="checking">Checking</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td><label for="deposit">Initial Deposit</label></td>
+      <td><input type="text" id="deposit" name="deposit" value="" style=""></td>
+    </tr>
+    <tr>
+      <td colspan="2"><button type="submit">Continue</button></td>
+    </tr>
+  </tbody></table>
+</form>
+
+</body></html>

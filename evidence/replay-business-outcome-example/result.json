@@ -1,0 +1,35 @@
+{
+  "capability": "open-sub-account",
+  "inputs": {
+    "memberId": "99999",
+    "accountType": "checking",
+    "initialDeposit": "300"
+  },
+  "result": {
+    "status": "business_outcome",
+    "outcome": "member_not_found",
+    "detail": "No member exists with the given ID.",
+    "log": [
+      {
+        "sourceStepIndex": 3,
+        "description": "Type into textbox \"Member ID\"",
+        "ok": true,
+        "strategyUsed": {
+          "kind": "role",
+          "role": "textbox",
+          "name": "Member ID"
+        }
+      },
+      {
+        "sourceStepIndex": 4,
+        "description": "Click button \"Search\"",
+        "ok": true,
+        "strategyUsed": {
+          "kind": "role",
+          "role": "button",
+          "name": "Search"
+        }
+      }
+    ]
+  }
+}

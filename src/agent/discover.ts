@@ -5,16 +5,12 @@
  *   npm run dev:target-app                     (terminal 1)
  *   npm run agent:discover -- --goal "look up member 12345 and read their savings balance"
  *
- * Writes the full run transcript as JSON evidence. Note: this is a rough ad hoc writer for
- * verifying the loop -- Milestone 7 formalizes evidence capture/layout. Redaction itself is the
- * shared safety/redaction.js utility, applied deep so it also catches the ActionResult's own
- * copy of each executed action.
+ * Writes the run transcript as evidence via the shared writer (redacted; a screenshot + DOM
+ * snapshot are captured too whenever the run doesn't end in success).
  */
 import 'dotenv/config';
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { chromium } from 'playwright';
-import { redactDeep } from '../safety/redaction.js';
+import { writeEvidence } from '../evidence/writer.js';
 import { runDiscovery } from './loop.js';
 
 function arg(flag: string): string | undefined {
@@ -51,22 +47,38 @@ async function main() {
     maxSteps: maxStepsArg ? Number(maxStepsArg) : undefined,
   });
 
+  let screenshotPng: Buffer | undefined;
+  let domSnapshotHtml: string | undefined;
+  if (result.status !== 'success') {
+    screenshotPng = await page.screenshot({ fullPage: true });
+    domSnapshotHtml = await page.content();
+  }
+
   await browser.close();
 
   console.log(`\nStatus: ${result.status}`);
   console.log(`Summary: ${result.summary}`);
   console.log(`Outputs: ${JSON.stringify(result.outputs, null, 2)}`);
   console.log(`Steps taken: ${result.steps.length}`);
+  if (result.policyBlocks.length > 0) {
+    console.log(`Policy blocks: ${result.policyBlocks.length}`);
+  }
 
   const secretValues = Object.entries(context)
     .filter(([key]) => /password|secret|token/i.test(key))
     .map(([, value]) => value);
-  const redacted = redactDeep(result, secretValues);
-  const outDir = path.join('evidence', 'tmp');
-  await fs.mkdir(outDir, { recursive: true });
-  const outFile = path.join(outDir, `discovery-${Date.now()}.json`);
-  await fs.writeFile(outFile, JSON.stringify(redacted, null, 2));
-  console.log(`\nFull transcript written to ${outFile}`);
+
+  const dir = await writeEvidence({
+    kind: 'discovery',
+    label: goal,
+    data: result,
+    secrets: secretValues,
+    screenshotPng,
+    domSnapshotHtml,
+  });
+  console.log(`\nEvidence written to ${dir}/`);
+
+  if (result.status !== 'success') process.exitCode = 1;
 }
 
 main().catch((err) => {

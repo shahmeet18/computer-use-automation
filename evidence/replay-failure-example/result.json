@@ -1,0 +1,63 @@
+{
+  "capability": "open-sub-account",
+  "inputs": {
+    "memberId": "12345",
+    "accountType": "gold",
+    "initialDeposit": "100"
+  },
+  "result": {
+    "status": "failure",
+    "failedStep": 7,
+    "expected": "\"Choose an option in combobox \"Account Type\"\" to succeed",
+    "observed": "an error was thrown while executing the step",
+    "error": "locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('combobox', { name: 'Account Type', exact: true }).first()\u001b[22m\n\u001b[2m    - locator resolved to <select id=\"accountType\" name=\"accountType\">…</select>\u001b[22m\n\u001b[2m  - attempting select option action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - did not find some options\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - did not find some options\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    59 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m       - did not find some options\u001b[22m\n\u001b[2m     - retrying select option action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n",
+    "log": [
+      {
+        "sourceStepIndex": 3,
+        "description": "Type into textbox \"Member ID\"",
+        "ok": true,
+        "strategyUsed": {
+          "kind": "role",
+          "role": "textbox",
+          "name": "Member ID"
+        }
+      },
+      {
+        "sourceStepIndex": 4,
+        "description": "Click button \"Search\"",
+        "ok": true,
+        "strategyUsed": {
+          "kind": "role",
+          "role": "button",
+          "name": "Search"
+        }
+      },
+      {
+        "sourceStepIndex": 5,
+        "description": "Click link \"View member 12345\"",
+        "ok": true,
+        "strategyUsed": {
+          "kind": "role",
+          "role": "link",
+          "name": "View member {{memberId}}"
+        }
+      },
+      {
+        "sourceStepIndex": 6,
+        "description": "Click link \"Open Sub-Account\"",
+        "ok": true,
+        "strategyUsed": {
+          "kind": "role",
+          "role": "link",
+          "name": "Open Sub-Account"
+        }
+      },
+      {
+        "sourceStepIndex": 7,
+        "description": "Choose an option in combobox \"Account Type\"",
+        "ok": false,
+        "detail": "locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('combobox', { name: 'Account Type', exact: true }).first()\u001b[22m\n\u001b[2m    - locator resolved to <select id=\"accountType\" name=\"accountType\">…</select>\u001b[22m\n\u001b[2m  - attempting select option action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - did not find some options\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - did not find some options\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    59 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m       - did not find some options\u001b[22m\n\u001b[2m     - retrying select option action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+      }
+    ]
+  }
+}

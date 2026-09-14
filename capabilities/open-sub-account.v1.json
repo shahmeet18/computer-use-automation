@@ -253,9 +253,9 @@
     }
   ],
   "provenance": {
-    "discoveryRunFile": "evidence/discovery-open-sub-account.json",
+    "discoveryRunFile": "evidence/discovery-open-sub-account/result.json",
     "model": "anthropic/claude-sonnet-4.5",
     "sourceGoal": "Log in, look up member 12345, open a new CHECKING sub-account for them with a 250 dollar initial deposit, confirm it, and read back the confirmation message so it can be reported to the caller.",
-    "recordedAt": "2026-09-14T22:10:58.889Z"
+    "recordedAt": "2026-09-14T22:24:58.349Z"
   }
 }

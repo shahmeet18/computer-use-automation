@@ -19,10 +19,9 @@
  */
 import 'dotenv/config';
 import fs from 'node:fs/promises';
-import path from 'node:path';
 import { chromium, type Page } from 'playwright';
 import type { Capability } from '../artifacts/schema.js';
-import { redactDeep } from '../safety/redaction.js';
+import { writeEvidence } from '../evidence/writer.js';
 import { replay } from './engine.js';
 import type { SessionConfig } from './types.js';
 
@@ -93,6 +92,13 @@ async function main() {
     approvedStepIndices,
   });
 
+  let screenshotPng: Buffer | undefined;
+  let domSnapshotHtml: string | undefined;
+  if (result.status === 'failure') {
+    screenshotPng = await page.screenshot({ fullPage: true });
+    domSnapshotHtml = await page.content();
+  }
+
   await browser.close();
 
   console.log(`\nStatus: ${result.status}`);
@@ -119,12 +125,14 @@ async function main() {
     );
   }
 
-  const outDir = path.join('evidence', 'tmp');
-  await fs.mkdir(outDir, { recursive: true });
-  const outFile = path.join(outDir, `replay-${capability.id}-${Date.now()}.json`);
-  const redacted = redactDeep({ capability: capability.id, inputs, result });
-  await fs.writeFile(outFile, JSON.stringify(redacted, null, 2));
-  console.log(`\nFull result written to ${outFile}`);
+  const dir = await writeEvidence({
+    kind: 'replay',
+    label: capability.id,
+    data: { capability: capability.id, inputs, result },
+    screenshotPng,
+    domSnapshotHtml,
+  });
+  console.log(`\nEvidence written to ${dir}/`);
 
   if (result.status === 'failure') process.exitCode = 1;
 }
