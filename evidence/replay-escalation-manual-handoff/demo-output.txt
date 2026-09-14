@@ -1,0 +1,112 @@
+
+> computer-use-automation@0.1.0 operator:demo-handoff
+> tsx src/operator/demo-handoff.ts
+
+Starting replay with escalation (will pause before the risky "Confirm" step)...
+
+>>> Replay paused: step 10 ("Click button "Confirm"") needs human confirmation.
+>>> Intervention iv-1789426491987-gkxns raised. The browser window is open -- act there if needed.
+>>> From another terminal: npm run operator -- resolve --id iv-1789426491987-gkxns --outcome approved|manual|abandoned [--note "..."]
+
+Intervention raised: iv-1789426491987-gkxns -- This step is flagged requiresConfirmation (risky/irreversible) and was not in the approved step list for this invocation. (Click button "Confirm")
+Human client attached to the same live page: http://localhost:4000/members/45678/sub-account/new
+Human clicked Confirm directly in the live session.
+Resolved intervention as manual. Waiting for replay to resume and finish...
+
+Final replay result status: success
+{
+  "status": "success",
+  "outputs": {
+    "confirmationMessage": "Success. New sub-account SUB-100001 created for David Kim (45678)."
+  },
+  "log": [
+    {
+      "sourceStepIndex": 3,
+      "description": "Type into textbox \"Member ID\"",
+      "ok": true,
+      "strategyUsed": {
+        "kind": "role",
+        "role": "textbox",
+        "name": "Member ID"
+      }
+    },
+    {
+      "sourceStepIndex": 4,
+      "description": "Click button \"Search\"",
+      "ok": true,
+      "strategyUsed": {
+        "kind": "role",
+        "role": "button",
+        "name": "Search"
+      }
+    },
+    {
+      "sourceStepIndex": 5,
+      "description": "Click link \"View member 12345\"",
+      "ok": true,
+      "strategyUsed": {
+        "kind": "role",
+        "role": "link",
+        "name": "View member {{memberId}}"
+      }
+    },
+    {
+      "sourceStepIndex": 6,
+      "description": "Click link \"Open Sub-Account\"",
+      "ok": true,
+      "strategyUsed": {
+        "kind": "role",
+        "role": "link",
+        "name": "Open Sub-Account"
+      }
+    },
+    {
+      "sourceStepIndex": 7,
+      "description": "Choose an option in combobox \"Account Type\"",
+      "ok": true,
+      "strategyUsed": {
+        "kind": "role",
+        "role": "combobox",
+        "name": "Account Type"
+      }
+    },
+    {
+      "sourceStepIndex": 8,
+      "description": "Type into textbox \"Initial Deposit\"",
+      "ok": true,
+      "strategyUsed": {
+        "kind": "role",
+        "role": "textbox",
+        "name": "Initial Deposit"
+      }
+    },
+    {
+      "sourceStepIndex": 9,
+      "description": "Click button \"Continue\"",
+      "ok": true,
+      "strategyUsed": {
+        "kind": "role",
+        "role": "button",
+        "name": "Continue"
+      }
+    },
+    {
+      "sourceStepIndex": 10,
+      "description": "Click button \"Confirm\"",
+      "ok": true,
+      "detail": "Completed manually by operator (Clicked Confirm myself after reviewing the deposit amount.)"
+    },
+    {
+      "sourceStepIndex": 11,
+      "description": "Read the text of status",
+      "ok": true,
+      "strategyUsed": {
+        "kind": "role",
+        "role": "status"
+      },
+      "detail": "Success. New sub-account SUB-100001 created for David Kim (45678)."
+    }
+  ]
+}
+
+PASS: manual handoff verified end-to-end on the same live session.

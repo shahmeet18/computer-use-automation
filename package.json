@@ -11,7 +11,9 @@
     "agent:discover": "tsx src/agent/discover.ts",
     "artifacts:record": "tsx src/artifacts/record.ts",
     "replay": "tsx src/replay/run.ts",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/**/*.test.ts",
+    "operator": "tsx src/operator/cli.ts",
+    "operator:demo-handoff": "tsx src/operator/demo-handoff.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

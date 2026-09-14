@@ -5,6 +5,7 @@ import { performAction } from './actions.js';
 import { TOOLS, toAgentAction } from './tools.js';
 import type { DiscoveryRunResult, DiscoveryStatus, DiscoveryStep, PageSnapshot } from './types.js';
 import { checkAction, loadPolicy } from '../safety/policy.js';
+import { createIntervention, waitForResume } from '../operator/store.js';
 
 const SYSTEM_PROMPT = `You are an automation agent operating a legacy back-office banking application on behalf of a bank employee.
 
@@ -32,6 +33,9 @@ export interface RunDiscoveryOptions {
   context?: Record<string, string>;
   maxSteps?: number;
   timeoutMs?: number;
+  /** When true, a "stuck" finish call pauses and raises an intervention instead of ending the
+   *  run -- requires a headed browser so a human can actually see and use it. */
+  escalate?: boolean;
 }
 
 export async function runDiscovery(opts: RunDiscoveryOptions): Promise<DiscoveryRunResult> {
@@ -122,6 +126,50 @@ export async function runDiscovery(opts: RunDiscoveryOptions): Promise<Discovery
       const status = args.status === 'success' ? 'success' : 'stuck';
       const summary = String(args.summary ?? '');
       const outputs = (args.outputs as Record<string, string> | undefined) ?? {};
+
+      if (status === 'stuck' && opts.escalate) {
+        const screenshotPng = await opts.page.screenshot({ fullPage: true }).catch(() => undefined);
+        const intervention = await createIntervention({
+          source: 'discovery',
+          subject: opts.goal,
+          step: i,
+          reason: summary,
+          currentUrl: snapshot.url,
+          screenshotPng,
+        });
+        console.log(`\n>>> Agent is stuck: ${summary}`);
+        console.log(`>>> Intervention ${intervention.id} raised. The browser window is open -- take over there.`);
+        console.log(
+          `>>> When done, from another terminal: npm run operator -- resolve --id ${intervention.id} --outcome manual|abandoned [--note "..."]\n`,
+        );
+
+        const resolution = await waitForResume(intervention.id);
+        if (resolution.outcome === 'abandoned') {
+          return finalize(
+            'stuck',
+            `${summary} (escalated to a human operator, who abandoned the run${resolution.note ? `: ${resolution.note}` : ''})`,
+            outputs,
+          );
+        }
+
+        messages.push({
+          role: 'tool',
+          tool_call_id: primary.id,
+          content: 'Escalated to a human operator, who has now handed control back.',
+        });
+
+        snapshot = await perceive(opts.page);
+        messages.push({
+          role: 'user',
+          content: [
+            `A human operator took over in the browser and has handed control back.`,
+            resolution.note ? `Operator note: "${resolution.note}"` : '',
+            `\nCurrent page: ${snapshot.url}\n${snapshot.text}`,
+          ].join(''),
+        });
+        continue;
+      }
+
       return finalize(status, summary, outputs);
     }
 

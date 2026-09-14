@@ -1,5 +1,6 @@
 import type { Page } from 'playwright';
 import type { BusinessOutcome, Capability, CapabilityStep } from '../artifacts/schema.js';
+import { createIntervention, waitForResume } from '../operator/store.js';
 import { checkAction, loadPolicy } from '../safety/policy.js';
 import { resolveLocator, substitute } from './locator.js';
 import type { ReplayResult, SessionConfig, StepLog } from './types.js';
@@ -17,6 +18,9 @@ export interface ReplayOptions {
    *  requiresConfirmation are blocked unless listed here. Empty/omitted by default: risky steps
    *  are conservatively refused, not silently executed. */
   approvedStepIndices?: number[];
+  /** When true, a blocked risky step or a hard step failure pauses and raises an intervention
+   *  instead of ending the run -- requires a headed browser so a human can actually use it. */
+  escalate?: boolean;
 }
 
 export async function replay(opts: ReplayOptions): Promise<ReplayResult> {
@@ -35,15 +39,10 @@ async function attempt(opts: ReplayOptions, startUrl: string, sessionRetriesLeft
 
   for (const step of capability.steps) {
     if (step.requiresConfirmation && !approved.has(step.sourceStepIndex)) {
-      return {
-        status: 'blocked',
-        step: step.sourceStepIndex,
-        description: step.description,
-        reason:
-          'This step is flagged requiresConfirmation (risky/irreversible) and was not in the ' +
-          'approved step list for this invocation.',
-        log,
-      };
+      const gate = await handleBlockedStep(page, capability, step, opts, log);
+      if (!gate.ok) return gate.result;
+      if (gate.executeNow) approved.add(step.sourceStepIndex); // fall through to execute below
+      else continue; // operator handled it manually; move to next step
     }
 
     const policyCheck = checkAction(step.action, policy);
@@ -77,14 +76,8 @@ async function attempt(opts: ReplayOptions, startUrl: string, sessionRetriesLeft
     const stepOutcome = await executeStep(page, step, inputs, outputs);
     log.push(stepOutcome.log);
     if (!stepOutcome.ok) {
-      return {
-        status: 'failure',
-        failedStep: step.sourceStepIndex,
-        expected: stepOutcome.expected,
-        observed: stepOutcome.observed,
-        error: stepOutcome.error,
-        log,
-      };
+      const handled = await handleFailedStep(page, capability, step, inputs, outputs, opts, log, stepOutcome);
+      if (!handled.ok) return handled.result;
     }
 
     const outcome = await detectBusinessOutcome(page, capability.businessOutcomes);
@@ -120,6 +113,140 @@ async function detectBusinessOutcome(
 type StepExecution =
   | { ok: true; log: StepLog }
   | { ok: false; log: StepLog; expected: string; observed: string; error: string };
+
+type BlockGateResult = { ok: true; executeNow: boolean } | { ok: false; result: ReplayResult };
+type FailureGateResult = { ok: true } | { ok: false; result: ReplayResult };
+
+/**
+ * A risky step was reached without prior approval. Without escalation this just blocks as
+ * before. With escalation, pause and let a human either approve it (we execute it here, right
+ * after) or do it manually in the live browser (we skip it and move on).
+ */
+async function handleBlockedStep(
+  page: Page,
+  capability: Capability,
+  step: CapabilityStep,
+  opts: ReplayOptions,
+  log: StepLog[],
+): Promise<BlockGateResult> {
+  const blockedReason =
+    'This step is flagged requiresConfirmation (risky/irreversible) and was not in the ' +
+    'approved step list for this invocation.';
+
+  if (!opts.escalate) {
+    return {
+      ok: false,
+      result: { status: 'blocked', step: step.sourceStepIndex, description: step.description, reason: blockedReason, log },
+    };
+  }
+
+  const screenshotPng = await page.screenshot({ fullPage: true }).catch(() => undefined);
+  const intervention = await createIntervention({
+    source: 'replay',
+    subject: capability.id,
+    step: step.sourceStepIndex,
+    reason: `${blockedReason} (${step.description})`,
+    currentUrl: page.url(),
+    screenshotPng,
+  });
+  console.log(`\n>>> Replay paused: step ${step.sourceStepIndex} ("${step.description}") needs human confirmation.`);
+  console.log(`>>> Intervention ${intervention.id} raised. The browser window is open -- act there if needed.`);
+  console.log(
+    `>>> From another terminal: npm run operator -- resolve --id ${intervention.id} --outcome approved|manual|abandoned [--note "..."]\n`,
+  );
+
+  const resolution = await waitForResume(intervention.id);
+  if (resolution.outcome === 'abandoned') {
+    return {
+      ok: false,
+      result: {
+        status: 'blocked',
+        step: step.sourceStepIndex,
+        description: step.description,
+        reason: `${blockedReason} Escalated and abandoned by operator${resolution.note ? `: ${resolution.note}` : ''}.`,
+        log,
+      },
+    };
+  }
+  if (resolution.outcome === 'approved') {
+    return { ok: true, executeNow: true };
+  }
+  // 'manual' (or 'retry', treated the same here): operator says they've handled it themselves.
+  log.push({
+    sourceStepIndex: step.sourceStepIndex,
+    description: step.description,
+    ok: true,
+    detail: `Completed manually by operator${resolution.note ? ` (${resolution.note})` : ''}`,
+  });
+  return { ok: true, executeNow: false };
+}
+
+/**
+ * A step threw a hard error. Without escalation this ends the run as a failure. With escalation,
+ * pause and let a human retry the same step, do it manually, or abandon.
+ */
+async function handleFailedStep(
+  page: Page,
+  capability: Capability,
+  step: CapabilityStep,
+  inputs: Record<string, string>,
+  outputs: Record<string, string>,
+  opts: ReplayOptions,
+  log: StepLog[],
+  stepOutcome: Extract<StepExecution, { ok: false }>,
+): Promise<FailureGateResult> {
+  const asFailure = (error: string): ReplayResult => ({
+    status: 'failure',
+    failedStep: step.sourceStepIndex,
+    expected: stepOutcome.expected,
+    observed: stepOutcome.observed,
+    error,
+    log,
+  });
+
+  if (!opts.escalate) {
+    return { ok: false, result: asFailure(stepOutcome.error) };
+  }
+
+  const screenshotPng = await page.screenshot({ fullPage: true }).catch(() => undefined);
+  const intervention = await createIntervention({
+    source: 'replay',
+    subject: capability.id,
+    step: step.sourceStepIndex,
+    reason: stepOutcome.error,
+    currentUrl: page.url(),
+    screenshotPng,
+  });
+  console.log(`\n>>> Replay paused: step ${step.sourceStepIndex} ("${step.description}") failed: ${stepOutcome.error}`);
+  console.log(`>>> Intervention ${intervention.id} raised. The browser window is open -- act there if needed.`);
+  console.log(
+    `>>> From another terminal: npm run operator -- resolve --id ${intervention.id} --outcome retry|manual|abandoned [--note "..."]\n`,
+  );
+
+  const resolution = await waitForResume(intervention.id);
+  if (resolution.outcome === 'abandoned') {
+    return {
+      ok: false,
+      result: asFailure(`${stepOutcome.error} Escalated and abandoned by operator${resolution.note ? `: ${resolution.note}` : ''}.`),
+    };
+  }
+  if (resolution.outcome === 'retry') {
+    const retry = await executeStep(page, step, inputs, outputs);
+    log.push(retry.log);
+    if (!retry.ok) {
+      return { ok: false, result: asFailure(`Retry after operator intervention also failed: ${retry.error}`) };
+    }
+    return { ok: true };
+  }
+  // 'manual' (or 'approved', treated the same here): operator says they've handled it themselves.
+  log.push({
+    sourceStepIndex: step.sourceStepIndex,
+    description: step.description,
+    ok: true,
+    detail: `Completed manually by operator${resolution.note ? ` (${resolution.note})` : ''}`,
+  });
+  return { ok: true };
+}
 
 async function executeStep(
   page: Page,

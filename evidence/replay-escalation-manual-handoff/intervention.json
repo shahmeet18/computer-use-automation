@@ -1,0 +1,14 @@
+{
+  "id": "iv-1789426491987-gkxns",
+  "createdAt": "2026-09-14T22:54:51.988Z",
+  "source": "replay",
+  "subject": "open-sub-account",
+  "step": 10,
+  "reason": "This step is flagged requiresConfirmation (risky/irreversible) and was not in the approved step list for this invocation. (Click button \"Confirm\")",
+  "currentUrl": "http://localhost:4000/members/45678/sub-account/new",
+  "screenshotFile": "operator/interventions/iv-1789426491987-gkxns.png",
+  "status": "resolved",
+  "resolvedAt": "2026-09-14T22:54:52.200Z",
+  "outcome": "manual",
+  "note": "Clicked Confirm myself after reviewing the deposit amount."
+}

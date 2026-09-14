@@ -7,6 +7,11 @@
  *
  * Writes the run transcript as evidence via the shared writer (redacted; a screenshot + DOM
  * snapshot are captured too whenever the run doesn't end in success).
+ *
+ * Human-in-the-loop escalation: pass --escalate --headed so a "stuck" finish call pauses the run
+ * and raises an intervention instead of ending it. From another terminal:
+ *   npm run operator -- list
+ *   npm run operator -- resolve --id <id> --outcome manual|abandoned [--note "..."]
  */
 import 'dotenv/config';
 import { chromium } from 'playwright';
@@ -29,6 +34,10 @@ async function main() {
   const startUrl = arg('--start-url') ?? `http://localhost:${process.env.TARGET_APP_PORT ?? 4000}/login`;
   const headed = process.argv.includes('--headed');
   const maxStepsArg = arg('--max-steps');
+  const escalate = process.argv.includes('--escalate');
+  if (escalate && !headed) {
+    console.warn('Warning: --escalate without --headed means there is no visible window for a human to use.');
+  }
 
   const context = { username: 'operator', password: 'password123' };
 
@@ -45,6 +54,7 @@ async function main() {
     startUrl,
     context,
     maxSteps: maxStepsArg ? Number(maxStepsArg) : undefined,
+    escalate,
   });
 
   let screenshotPng: Buffer | undefined;

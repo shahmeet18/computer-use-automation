@@ -11,3 +11,4 @@ dist/
 # Evidence/artifacts generated at runtime (kept selectively via .gitkeep + committed examples)
 /evidence/tmp/
 session-notes/
+operator/interventions/

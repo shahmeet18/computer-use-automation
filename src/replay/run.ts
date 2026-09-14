@@ -16,6 +16,11 @@
  * Demonstrate the risky-step gate: the "Confirm" step is flagged requiresConfirmation, so a
  * plain run stops with status "blocked" before it. Approve it explicitly to let replay through:
  *   --approve 10
+ *
+ * Human-in-the-loop escalation: pass --escalate --headed so a blocked risky step or a hard
+ * failure pauses the run and raises an intervention instead of ending it. From another terminal:
+ *   npm run operator -- list
+ *   npm run operator -- resolve --id <id> --outcome approved|retry|manual|abandoned [--note "..."]
  */
 import 'dotenv/config';
 import fs from 'node:fs/promises';
@@ -74,6 +79,10 @@ async function main() {
   const simulateTimeout = process.argv.includes('--simulate-timeout');
   const startUrl = `${capability.target.baseUrl}${capability.target.entryPath}${simulateTimeout ? '?simulateTimeout=1' : ''}`;
   const approvedStepIndices = multiArg('--approve').map(Number);
+  const escalate = process.argv.includes('--escalate');
+  if (escalate && !headed) {
+    console.warn('Warning: --escalate without --headed means there is no visible window for a human to use.');
+  }
 
   const browser = await chromium.launch({ headless: !headed });
   const page = await browser.newPage();
@@ -90,6 +99,7 @@ async function main() {
     startUrl,
     session: buildSession(capability.target.baseUrl),
     approvedStepIndices,
+    escalate,
   });
 
   let screenshotPng: Buffer | undefined;
