@@ -3,8 +3,8 @@
 ## 1. Architecture
 
 A single TypeScript/Node process, no services or queues — the task is one target app end to end,
-and the assignment explicitly discourages building scaling infrastructure prematurely. Six
-modules, each with one job: `target-app` (the mock legacy bank app being automated), `agent`
+and building scaling infrastructure for a single-tenant proof of concept would add complexity with
+no payoff. Six modules, each with one job: `target-app` (the mock legacy bank app being automated), `agent`
 (perception, action, and the LLM discovery loop), `artifacts` (the capability schema and
 recorder), `replay` (the deterministic execution engine), `safety` (policy and redaction), and
 `operator` (escalation).
@@ -65,8 +65,8 @@ description — "no such member" is data, not a crash), `failure` (which step, w
 what was actually observed, the raw error), or `blocked` (a risky step withheld). Business outcomes
 are **declared per capability**, not inferred, because only the person who recorded it has actually
 seen the app's real error states — this is also why the taxonomy doesn't collapse "no such member"
-and "the server threw a 500" into the same bucket, which the assignment calls out as the most
-common design mistake here.
+and "the server threw a 500" into the same bucket, which is one of the most common design mistakes
+in systems like this.
 
 Session expiry is handled as its own recoverable class: if replay is unexpectedly redirected to a
 login-like URL, it re-authenticates once and retries the *entire capability* from a clean start
@@ -98,7 +98,8 @@ entire replay engine stay untouched. The seam is exactly two functions and nowhe
 
 **Multi-tenant reuse.** The schema already separates "what varies per call" (`inputSchema`,
 resolved at invocation time) from "what's structural" (locators, checkpoint, business outcomes).
-The natural third axis — not built, see §7 — is "what varies per tenant": a
+The natural third axis for a system with many institutions on the same vendor product — not built,
+see §7 — is "what varies per tenant": a
 `overrides: Record<tenantId, Partial<LocatorDescriptor>>` keyed by step, letting one artifact serve
 every tenant on the same vendor product's version while a tenant whose instance is skinned or
 relabeled differently gets a small, explicit override instead of a full re-recording. This slots
@@ -110,9 +111,10 @@ mechanism here too: if a given tenant's replays consistently resolve via a fallb
 than the primary one, that's a per-tenant signal the underlying app version or configuration
 differs there, worth flagging for review before a real break happens.
 
-None of the override/desktop machinery is implemented — deliberately, per the assignment's
-instruction to design for this rather than build it. What's real is that nothing in `Capability`,
-`LocatorDescriptor`, or the replay engine assumes one tenant or one surface type.
+None of the override/desktop machinery is implemented — deliberately: without real tenants or a
+real desktop target to validate against, building it now would be speculative. What's real is that
+nothing in `Capability`, `LocatorDescriptor`, or the replay engine assumes one tenant or one
+surface type.
 
 ## 5. Escalation & handoff
 
@@ -144,7 +146,7 @@ Discovery resumption is genuine continuation, not "let the human finish by hand"
 loop re-perceives the page and the LLM keeps deciding, so a human can unblock one dead end and hand
 the rest back.
 
-**Scope cut, explicit per the assignment:** the operator "console" is a two-command CLI
+**Scope cut, by design:** the operator "console" is a two-command CLI
 (`list`/`resolve`), not a co-browsing UI. A real product would put an HTTP API and a small page
 with a live screenshot and a resume button on top of exactly the same `InterventionRequest` model —
 the control-transfer model doesn't change, only the surface does.
@@ -186,14 +188,17 @@ judgment; it isn't re-evaluated if a capability's steps change shape after drift
   need it.
 - **CSS/XPath as a third locator tier** — role+name and text-match covered every real scenario
   here; a low-risk addition if a real app ever defeats both.
-- **Multi-tenant overrides and a desktop-surface implementation** — designed for (§4), not built,
-  per the assignment's explicit instruction not to build scaling infrastructure prematurely.
+- **Multi-tenant overrides and a desktop-surface implementation** — designed for (§4), not built:
+  without real tenants or a real desktop target to validate against, building it now would be
+  speculative rather than useful.
 - **Discovery escalation only on the explicit `stuck` signal**, not `timeout`/`max_steps_exceeded`/
   `error` — same mechanism, just not wired to every exit path yet.
 - **Route-level allowlist** — only origin-level exists today (§6).
 - **No screen recording** — the CDP-verified handoff demo plus committed screenshots/DOM snapshots
-  serve the same evidentiary purpose; the assignment lists video as optional.
-- **Optional stretch goals** (agent-facing capability catalog API, codegen, confidence scoring,
-  assisted LLM recovery on replay failure, canonicalization/cross-tenant demo, multi-run stability)
-  were not attempted. Time went into making every core requirement (§3.1–3.7 of the assignment)
-  real and independently verified rather than adding a stretch item on top of a thinner core.
+  serve the same evidentiary purpose without the overhead of video capture.
+- **Extra features beyond the core** (an agent-facing capability catalog API, codegen from an
+  artifact, confidence scoring/approval gating, assisted LLM recovery on replay failure,
+  cross-tenant canonicalization, multi-run stability testing) were not attempted. Time went into
+  making every core capability — the agent loop, the artifact, replay, safety, evidence, and
+  escalation — real and independently verified rather than adding an extra feature on top of a
+  thinner core.

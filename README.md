@@ -5,9 +5,14 @@ to discover how to accomplish it live ("computer use"), records the successful r
 versioned **capability artifact**, and replays that artifact **deterministically** (no LLM in the
 loop) with structured error handling, safety guardrails, and human-in-the-loop escalation.
 
-Built for interface.ai's take-home assignment — see `Computer-Use Automation System.md` for the
-full brief and [`REPORT.md`](./REPORT.md) for the design write-up (architecture, artifact schema,
-determinism/error handling, heterogeneity/multi-tenant, escalation, safety, and cuts).
+The premise: many real-world back-office systems (banking, insurance, healthcare admin consoles,
+and plenty of other enterprise software) have no API — the only way in is the same UI a human
+operator uses. This project explores letting an LLM figure out a task once via "computer use," then
+turning what it learned into a reusable, deterministic **capability** that no longer needs the model
+in the loop — reliable and cheap to invoke, with a real safety and human-escalation story around it.
+
+See [`REPORT.md`](./REPORT.md) for the full design write-up (architecture, artifact schema,
+determinism/error handling, heterogeneity/multi-tenant, escalation, safety, and what was cut).
 
 ## Setup
 

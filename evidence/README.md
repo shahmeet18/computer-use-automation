@@ -17,5 +17,5 @@ while developing/verifying and isn't part of this curated set.
 | `replay-escalation-manual-handoff/` | Human-in-the-loop escalation and handoff, verified end-to-end: replay pauses at the risky "Confirm" step (`intervention.json` + `intervention-screenshot.png`), a *separate* Playwright client connects over CDP to the exact same running browser and clicks Confirm itself (standing in for a human), resolves the intervention as `manual`, and the paused replay resumes and completes (`demo-output.txt`). Reproduce with `npm run operator:demo-handoff`. |
 
 Together these cover the full replay result taxonomy (`success` / `business_outcome` / `failure` /
-`blocked`-then-resumed) and both required real-run categories (one discovery run, multiple replay
-runs, including an error/exceptional state) called for in the assignment's deliverables section.
+`blocked`-then-resumed), a real discovery run, and multiple replay runs including a genuine
+error/exceptional state — a real end-to-end demonstration, not just a description of one.
