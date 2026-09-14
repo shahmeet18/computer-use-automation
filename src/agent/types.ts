@@ -41,3 +41,25 @@ export type AgentAction =
 export type ActionResult =
   | { ok: true; action: AgentAction; extractedText?: string }
   | { ok: false; action: AgentAction; error: string };
+
+export type DiscoveryStatus = 'success' | 'stuck' | 'max_steps_exceeded' | 'timeout' | 'error';
+
+export interface DiscoveryStep {
+  index: number;
+  timestamp: string;
+  snapshotUrl: string;
+  action: AgentAction;
+  result: ActionResult;
+}
+
+export interface DiscoveryRunResult {
+  status: DiscoveryStatus;
+  summary: string;
+  outputs: Record<string, string>;
+  steps: DiscoveryStep[];
+  model: string;
+  goal: string;
+  startUrl: string;
+  startedAt: string;
+  endedAt: string;
+}
