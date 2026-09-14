@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.log
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Evidence/artifacts generated at runtime (kept selectively via .gitkeep + committed examples)
+/evidence/tmp/
