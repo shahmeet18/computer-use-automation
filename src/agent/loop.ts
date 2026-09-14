@@ -135,11 +135,13 @@ export async function runDiscovery(opts: RunDiscoveryOptions): Promise<Discovery
     }
 
     const result = await performAction(opts.page, snapshot, action);
+    const element = 'ref' in action ? snapshot.elements.get(action.ref) : undefined;
     steps.push({
       index: i,
       timestamp: new Date().toISOString(),
       snapshotUrl: snapshot.url,
       action,
+      element,
       result,
     });
 

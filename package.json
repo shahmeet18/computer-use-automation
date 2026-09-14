@@ -8,7 +8,8 @@
     "dev:target-app": "tsx watch src/target-app/server.ts",
     "typecheck": "tsc --noEmit",
     "dev:perception-demo": "tsx src/agent/demo.ts",
-    "agent:discover": "tsx src/agent/discover.ts"
+    "agent:discover": "tsx src/agent/discover.ts",
+    "artifacts:record": "tsx src/artifacts/record.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

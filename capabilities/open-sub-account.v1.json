@@ -1,0 +1,233 @@
+{
+  "id": "open-sub-account",
+  "version": 1,
+  "name": "Open Sub-Account",
+  "description": "Looks up a member by ID and opens a new sub-account (savings or checking) with a given initial deposit, confirms it, and reports back the confirmation message. Precondition: the caller already has an authenticated session against the target app.",
+  "target": {
+    "baseUrl": "http://localhost:4000"
+  },
+  "inputSchema": {
+    "memberId": {
+      "type": "string",
+      "description": "Member ID to search for and open the sub-account under"
+    },
+    "accountType": {
+      "type": "string",
+      "description": "Sub-account type to open",
+      "enum": [
+        "savings",
+        "checking"
+      ]
+    },
+    "initialDeposit": {
+      "type": "string",
+      "description": "Initial deposit amount in whole/decimal dollars (minimum $25)"
+    }
+  },
+  "outputSchema": {
+    "confirmationMessage": {
+      "type": "string",
+      "description": "Raw confirmation text shown after the sub-account is created"
+    }
+  },
+  "steps": [
+    {
+      "sourceStepIndex": 3,
+      "description": "Type into textbox \"Member ID\"",
+      "action": {
+        "type": "type",
+        "locator": {
+          "strategies": [
+            {
+              "kind": "role",
+              "role": "textbox",
+              "name": "Member ID"
+            },
+            {
+              "kind": "text",
+              "text": "Member ID"
+            }
+          ]
+        },
+        "value": {
+          "kind": "input",
+          "input": "memberId"
+        }
+      }
+    },
+    {
+      "sourceStepIndex": 4,
+      "description": "Click button \"Search\"",
+      "action": {
+        "type": "click",
+        "locator": {
+          "strategies": [
+            {
+              "kind": "role",
+              "role": "button",
+              "name": "Search"
+            },
+            {
+              "kind": "text",
+              "text": "Search"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "sourceStepIndex": 5,
+      "description": "Click link \"View member 12345\"",
+      "action": {
+        "type": "click",
+        "locator": {
+          "strategies": [
+            {
+              "kind": "role",
+              "role": "link",
+              "name": "View member {{memberId}}"
+            },
+            {
+              "kind": "text",
+              "text": "View member {{memberId}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "sourceStepIndex": 6,
+      "description": "Click link \"Open Sub-Account\"",
+      "action": {
+        "type": "click",
+        "locator": {
+          "strategies": [
+            {
+              "kind": "role",
+              "role": "link",
+              "name": "Open Sub-Account"
+            },
+            {
+              "kind": "text",
+              "text": "Open Sub-Account"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "sourceStepIndex": 7,
+      "description": "Choose an option in combobox \"Account Type\"",
+      "action": {
+        "type": "select",
+        "locator": {
+          "strategies": [
+            {
+              "kind": "role",
+              "role": "combobox",
+              "name": "Account Type"
+            },
+            {
+              "kind": "text",
+              "text": "Account Type"
+            }
+          ]
+        },
+        "value": {
+          "kind": "input",
+          "input": "accountType"
+        }
+      }
+    },
+    {
+      "sourceStepIndex": 8,
+      "description": "Type into textbox \"Initial Deposit\"",
+      "action": {
+        "type": "type",
+        "locator": {
+          "strategies": [
+            {
+              "kind": "role",
+              "role": "textbox",
+              "name": "Initial Deposit"
+            },
+            {
+              "kind": "text",
+              "text": "Initial Deposit"
+            }
+          ]
+        },
+        "value": {
+          "kind": "input",
+          "input": "initialDeposit"
+        }
+      }
+    },
+    {
+      "sourceStepIndex": 9,
+      "description": "Click button \"Continue\"",
+      "action": {
+        "type": "click",
+        "locator": {
+          "strategies": [
+            {
+              "kind": "role",
+              "role": "button",
+              "name": "Continue"
+            },
+            {
+              "kind": "text",
+              "text": "Continue"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "sourceStepIndex": 10,
+      "description": "Click button \"Confirm\"",
+      "action": {
+        "type": "click",
+        "locator": {
+          "strategies": [
+            {
+              "kind": "role",
+              "role": "button",
+              "name": "Confirm"
+            },
+            {
+              "kind": "text",
+              "text": "Confirm"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "sourceStepIndex": 11,
+      "description": "Read the text of status",
+      "action": {
+        "type": "extract",
+        "locator": {
+          "strategies": [
+            {
+              "kind": "role",
+              "role": "status"
+            }
+          ]
+        },
+        "output": "confirmationMessage"
+      }
+    }
+  ],
+  "checkpoint": {
+    "type": "text_present",
+    "text": "New sub-account"
+  },
+  "provenance": {
+    "discoveryRunFile": "evidence/discovery-open-sub-account.json",
+    "model": "anthropic/claude-sonnet-4.5",
+    "sourceGoal": "Log in, look up member 12345, open a new CHECKING sub-account for them with a 250 dollar initial deposit, confirm it, and read back the confirmation message so it can be reported to the caller.",
+    "recordedAt": "2026-09-14T22:01:19.871Z"
+  }
+}

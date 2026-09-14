@@ -49,6 +49,10 @@ export interface DiscoveryStep {
   timestamp: string;
   snapshotUrl: string;
   action: AgentAction;
+  /** The perceived element the action's ref resolved to, when the action targets one -- this
+   *  (role + accessible name), not the ephemeral ref, is what the artifact recorder turns into a
+   *  durable locator. */
+  element?: PerceivedElement;
   result: ActionResult;
 }
 
