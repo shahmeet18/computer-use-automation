@@ -1,5 +1,6 @@
 import type { Page } from 'playwright';
 import type { BusinessOutcome, Capability, CapabilityStep } from '../artifacts/schema.js';
+import { checkAction, loadPolicy } from '../safety/policy.js';
 import { resolveLocator, substitute } from './locator.js';
 import type { ReplayResult, SessionConfig, StepLog } from './types.js';
 
@@ -12,6 +13,10 @@ export interface ReplayOptions {
   startUrl?: string;
   session?: SessionConfig;
   maxSessionRetries?: number;
+  /** Source step indices a human has explicitly approved for this invocation -- steps flagged
+   *  requiresConfirmation are blocked unless listed here. Empty/omitted by default: risky steps
+   *  are conservatively refused, not silently executed. */
+  approvedStepIndices?: number[];
 }
 
 export async function replay(opts: ReplayOptions): Promise<ReplayResult> {
@@ -23,10 +28,36 @@ async function attempt(opts: ReplayOptions, startUrl: string, sessionRetriesLeft
   const { page, capability, inputs } = opts;
   const log: StepLog[] = [];
   const outputs: Record<string, string> = {};
+  const approved = new Set(opts.approvedStepIndices ?? []);
+  const policy = loadPolicy();
 
   await page.goto(startUrl);
 
   for (const step of capability.steps) {
+    if (step.requiresConfirmation && !approved.has(step.sourceStepIndex)) {
+      return {
+        status: 'blocked',
+        step: step.sourceStepIndex,
+        description: step.description,
+        reason:
+          'This step is flagged requiresConfirmation (risky/irreversible) and was not in the ' +
+          'approved step list for this invocation.',
+        log,
+      };
+    }
+
+    const policyCheck = checkAction(step.action, policy);
+    if (!policyCheck.allowed) {
+      return {
+        status: 'failure',
+        failedStep: step.sourceStepIndex,
+        expected: 'an action permitted by safety policy',
+        observed: policyCheck.reason,
+        error: `Blocked by policy: ${policyCheck.reason}`,
+        log,
+      };
+    }
+
     if (opts.session?.isLoginUrl(page.url())) {
       if (sessionRetriesLeft <= 0) {
         return {

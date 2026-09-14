@@ -27,4 +27,7 @@ export interface RecordingSpec {
   checkpoint: Checkpoint;
   /** Known non-happy-path results the app can return partway through this flow. */
   businessOutcomes: BusinessOutcome[];
+  /** Discovery-transcript step indices that are risky/irreversible -- flows through to
+   *  requiresConfirmation on the recorded step. */
+  riskyStepIndices: number[];
 }

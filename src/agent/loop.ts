@@ -4,6 +4,7 @@ import { perceive } from './perception.js';
 import { performAction } from './actions.js';
 import { TOOLS, toAgentAction } from './tools.js';
 import type { DiscoveryRunResult, DiscoveryStatus, DiscoveryStep, PageSnapshot } from './types.js';
+import { checkAction, loadPolicy } from '../safety/policy.js';
 
 const SYSTEM_PROMPT = `You are an automation agent operating a legacy back-office banking application on behalf of a bank employee.
 
@@ -40,12 +41,14 @@ export async function runDiscovery(opts: RunDiscoveryOptions): Promise<Discovery
   const model = process.env.OPENROUTER_MODEL ?? 'anthropic/claude-sonnet-4.5';
   const startedAt = new Date().toISOString();
   const steps: DiscoveryStep[] = [];
+  const policyBlocks: DiscoveryRunResult['policyBlocks'] = [];
 
   const finalize = (status: DiscoveryStatus, summary: string, outputs: Record<string, string>): DiscoveryRunResult => ({
     status,
     summary,
     outputs,
     steps,
+    policyBlocks,
     model,
     goal: opts.goal,
     startUrl: opts.startUrl,
@@ -130,6 +133,17 @@ export async function runDiscovery(opts: RunDiscoveryOptions): Promise<Discovery
         role: 'tool',
         tool_call_id: primary.id,
         content: `Error: ${err instanceof Error ? err.message : String(err)}`,
+      });
+      continue;
+    }
+
+    const policyCheck = checkAction(action, loadPolicy());
+    if (!policyCheck.allowed) {
+      policyBlocks.push({ turn: i, action, reason: policyCheck.reason });
+      messages.push({
+        role: 'tool',
+        tool_call_id: primary.id,
+        content: `Blocked by policy: ${policyCheck.reason} Choose a different action.`,
       });
       continue;
     }

@@ -12,12 +12,17 @@
  *
  * Demonstrate session recovery:
  *   --simulate-timeout
+ *
+ * Demonstrate the risky-step gate: the "Confirm" step is flagged requiresConfirmation, so a
+ * plain run stops with status "blocked" before it. Approve it explicitly to let replay through:
+ *   --approve 10
  */
 import 'dotenv/config';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, type Page } from 'playwright';
 import type { Capability } from '../artifacts/schema.js';
+import { redactDeep } from '../safety/redaction.js';
 import { replay } from './engine.js';
 import type { SessionConfig } from './types.js';
 
@@ -69,6 +74,7 @@ async function main() {
   const headed = process.argv.includes('--headed');
   const simulateTimeout = process.argv.includes('--simulate-timeout');
   const startUrl = `${capability.target.baseUrl}${capability.target.entryPath}${simulateTimeout ? '?simulateTimeout=1' : ''}`;
+  const approvedStepIndices = multiArg('--approve').map(Number);
 
   const browser = await chromium.launch({ headless: !headed });
   const page = await browser.newPage();
@@ -76,6 +82,7 @@ async function main() {
   console.log(`Capability: ${capability.id} v${capability.version}`);
   console.log(`Inputs: ${JSON.stringify(inputs)}`);
   if (simulateTimeout) console.log('Simulating an expired session on the first navigation.');
+  if (approvedStepIndices.length > 0) console.log(`Approved risky steps: ${approvedStepIndices.join(', ')}`);
 
   const result = await replay({
     page,
@@ -83,6 +90,7 @@ async function main() {
     inputs,
     startUrl,
     session: buildSession(capability.target.baseUrl),
+    approvedStepIndices,
   });
 
   await browser.close();
@@ -93,6 +101,9 @@ async function main() {
   } else if (result.status === 'business_outcome') {
     console.log(`Outcome: ${result.outcome}`);
     console.log(`Detail: ${result.detail}`);
+  } else if (result.status === 'blocked') {
+    console.log(`Blocked step: ${result.step} (${result.description})`);
+    console.log(`Reason: ${result.reason}`);
   } else {
     console.log(`Failed step: ${result.failedStep}`);
     console.log(`Expected: ${result.expected}`);
@@ -111,7 +122,8 @@ async function main() {
   const outDir = path.join('evidence', 'tmp');
   await fs.mkdir(outDir, { recursive: true });
   const outFile = path.join(outDir, `replay-${capability.id}-${Date.now()}.json`);
-  await fs.writeFile(outFile, JSON.stringify({ capability: capability.id, inputs, result }, null, 2));
+  const redacted = redactDeep({ capability: capability.id, inputs, result });
+  await fs.writeFile(outFile, JSON.stringify(redacted, null, 2));
   console.log(`\nFull result written to ${outFile}`);
 
   if (result.status === 'failure') process.exitCode = 1;

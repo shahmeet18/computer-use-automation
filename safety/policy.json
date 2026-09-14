@@ -1,0 +1,4 @@
+{
+  "allowedOrigins": ["http://localhost:4000"],
+  "allowedActionTypes": ["click", "type", "select", "extract", "navigate", "wait_for"]
+}

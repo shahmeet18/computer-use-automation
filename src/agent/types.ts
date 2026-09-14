@@ -56,11 +56,20 @@ export interface DiscoveryStep {
   result: ActionResult;
 }
 
+export interface PolicyBlock {
+  turn: number;
+  action: AgentAction;
+  reason: string;
+}
+
 export interface DiscoveryRunResult {
   status: DiscoveryStatus;
   summary: string;
   outputs: Record<string, string>;
   steps: DiscoveryStep[];
+  /** Actions the model proposed that safety policy refused to execute -- kept for evidence that
+   *  the guardrail is real, not just a config file nobody checks. */
+  policyBlocks: PolicyBlock[];
   model: string;
   goal: string;
   startUrl: string;

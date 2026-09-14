@@ -21,6 +21,13 @@ export type ReplayResult =
       observed: string;
       error: string;
       log: StepLog[];
+    }
+  | {
+      status: 'blocked';
+      step: number;
+      description: string;
+      reason: string;
+      log: StepLog[];
     };
 
 export interface SessionConfig {

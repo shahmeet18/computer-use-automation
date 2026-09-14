@@ -48,6 +48,9 @@ export const openSubAccountSpec: RecordingSpec = {
     },
   ],
   checkpoint: { type: 'text_present', text: 'New sub-account' },
+  // Step 10 ("Confirm") submits the POST that actually creates the sub-account -- irreversible,
+  // so replay must not execute it unattended (see safety/policy and the --approve replay flag).
+  riskyStepIndices: [10],
   businessOutcomes: [
     {
       id: 'member_not_found',

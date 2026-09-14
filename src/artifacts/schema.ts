@@ -38,6 +38,9 @@ export interface CapabilityStep {
    *  understand what this step does without reading the locator internals. */
   description: string;
   action: CapabilityAction;
+  /** True for risky/irreversible steps (e.g. the final submit that creates a real financial
+   *  transaction). Replay will not execute these unattended -- see safety/policy. */
+  requiresConfirmation?: boolean;
 }
 
 export interface JsonSchemaLike {

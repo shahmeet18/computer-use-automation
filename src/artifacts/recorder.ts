@@ -12,12 +12,14 @@ export function recordArtifact(
   const outputByStep = new Map(spec.outputs.map((o) => [o.fromStep, o]));
   const templatize = buildTemplatizer(transcript, spec.inputs);
 
+  const riskyStepIndices = new Set(spec.riskyStepIndices);
   const steps: CapabilityStep[] = spec.stepIndices.map((index) => {
     const discoveryStep = stepsByIndex.get(index);
     if (!discoveryStep) {
       throw new Error(`Recording spec "${spec.id}" references step ${index}, not in the transcript`);
     }
-    return toCapabilityStep(discoveryStep, inputByStep.get(index), outputByStep.get(index), templatize);
+    const step = toCapabilityStep(discoveryStep, inputByStep.get(index), outputByStep.get(index), templatize);
+    return riskyStepIndices.has(index) ? { ...step, requiresConfirmation: true } : step;
   });
 
   return {
