@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev:target-app": "tsx watch src/target-app/server.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev:perception-demo": "tsx src/agent/demo.ts"
   },
   "dependencies": {
     "express": "^4.21.2",
